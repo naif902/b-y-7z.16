@@ -1,7 +1,7 @@
 local Material = loadstring(game:HttpGet("https://raw.githubusercontent.com/NiceBBMBThai12/NBTScript/main/Gui%20Th%20Edit%20free%2001"))()
 
 local XX = Material.Load({
-    Title = "By 7z.16",
+    Title = "By EX ON TOP",
     Style = 1,
     SizeX = 400,
     SizeY = 185,

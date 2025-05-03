@@ -1,0 +1,189 @@
+local Material = loadstring(game:HttpGet("https://raw.githubusercontent.com/NiceBBMBThai12/NBTScript/main/Gui%20Th%20Edit%20free%2001"))()
+
+local XX = Material.Load({
+    Title = "By 7z.16",
+    Style = 1,
+    SizeX = 400,
+    SizeY = 185,
+    Theme = "Dark"
+})
+
+-- الخدمات السريعة
+local s = setmetatable({}, {
+    __index = function(_, service)
+        return game:GetService(service)
+    end
+})
+
+-- متغيرات Wallhop
+local player = s.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+local uis = s.UserInputService
+local runService = s.RunService
+
+local wallDistance = 3
+local wallJumpForce = Vector3.new(0, 50, 0)
+local wallhopConnection
+
+-- التحقق من قرب الجدار
+local function isNearWall()
+    local origin = rootPart.Position
+    local directions = {
+        Vector3.new(1, 0, 0),
+        Vector3.new(-1, 0, 0),
+        Vector3.new(0, 0, 1),
+        Vector3.new(0, 0, -1),
+    }
+    for _, dir in ipairs(directions) do
+        local ray = Ray.new(origin, dir * wallDistance)
+        local hit = workspace:FindPartOnRay(ray, character)
+        if hit and hit.CanCollide then
+            return true
+        end
+    end
+    return false
+end
+
+-- تفعيل Wallhop
+local function activateWallhop()
+    wallhopConnection = uis.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        if input.KeyCode == Enum.KeyCode.Space and isNearWall() then
+            rootPart.Velocity = Vector3.new(rootPart.Velocity.X, 0, rootPart.Velocity.Z)
+            rootPart.Velocity = rootPart.Velocity + wallJumpForce
+        end
+    end)
+end
+
+-- إيقاف Wallhop
+local function deactivateWallhop()
+    if wallhopConnection then
+        wallhopConnection:Disconnect()
+        wallhopConnection = nil
+    end
+end
+
+-- تنقل فوري بالنقر
+local teleportConnection
+local function startClickTeleport()
+    if teleportConnection then teleportConnection:Disconnect() end
+    teleportConnection = uis.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local pos = input.Position
+            local ray = workspace.CurrentCamera:ScreenPointToRay(pos.X, pos.Y)
+            local params = RaycastParams.new()
+            params.FilterDescendantsInstances = {character}
+            params.FilterType = Enum.RaycastFilterType.Blacklist
+            params.IgnoreWater = true
+
+            local result = workspace:Raycast(ray.Origin, ray.Direction * 1000, params)
+            if result then
+                rootPart.CFrame = CFrame.new(result.Position + Vector3.new(0, 3, 0))
+            end
+        end
+    end)
+end
+
+local function stopClickTeleport()
+    if teleportConnection then
+        teleportConnection:Disconnect()
+        teleportConnection = nil
+    end
+end
+
+-- متغيرات التحكم في السرعة
+local speedConnection
+local speedEnabled = false
+local speedValue = 16 -- السرعة الافتراضية
+
+local function setPlayerSpeed(value)
+    if humanoid then
+        humanoid.WalkSpeed = value
+    end
+end
+
+local function enableSpeed()
+    speedConnection = runService.RenderStepped:Connect(function()
+        if speedEnabled and humanoid then
+            humanoid.WalkSpeed = speedValue
+        end
+    end)
+end
+
+local function disableSpeed()
+    if speedConnection then
+        speedConnection:Disconnect()
+        speedConnection = nil
+    end
+    if humanoid then
+        humanoid.WalkSpeed = 16 -- العودة للسرعة العادية
+    end
+end
+
+-- تبويبات القائمة
+local Main = XX.New({ Title = "الميزات" })
+local Credit = XX.New({ Title = "المطور" })
+
+-- زر تفعيل / إيقاف Wallhop
+Main.Toggle({
+    Text = "🧱 تفعيل Wallhop",
+    Callback = function(enabled)
+        if enabled then
+            activateWallhop()
+        else
+            deactivateWallhop()
+        end
+    end,
+    Enabled = false
+})
+
+-- زر تفعيل / إيقاف Teleport
+Main.Toggle({
+    Text = "⚡ تنقل تلقائي عند النقر",
+    Callback = function(enabled)
+        if enabled then
+            startClickTeleport()
+        else
+            stopClickTeleport()
+        end
+    end,
+    Enabled = false
+})
+
+-- شريط تحديد السرعة
+Main.Slider({
+    Text = "🎚️ تحديد سرعة اللاعب",
+    Callback = function(val)
+        speedValue = val
+        if speedEnabled then
+            setPlayerSpeed(speedValue)
+        end
+    end,
+    Min = 16,
+    Max = 100,
+    Def = 16
+})
+
+-- زر تفعيل / إيقاف تغيير السرعة
+Main.Toggle({
+    Text = "🏃‍♂️ تفعيل تغيير السرعة",
+    Callback = function(enabled)
+        speedEnabled = enabled
+        if enabled then
+            enableSpeed()
+        else
+            disableSpeed()
+        end
+    end,
+    Enabled = false
+})
+
+-- زر نسخ معرف المطور
+Credit.Button({
+    Text = "📋 انسخ ديسكورد المطور",
+    Callback = function()
+        setclipboard("7z.16")
+    end
+})
